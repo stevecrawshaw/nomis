@@ -1,4 +1,4 @@
-pacman::p_load(tidyverse, nomisr, janitor, lemon, sf)
+pacman::p_load(tidyverse, nomisr, janitor, lemon, sf, ggthemes, ggtext, glue)
 # get the list of nomis datasets
 nd_tbl <- nomis_data_info()
 # have a look
@@ -101,21 +101,6 @@ pyramid_plot_tbl <- sex_by_age_raw_tbl |>
   glimpse()
 
 # Now we re - shape the data so that there's a column for each measure
-# and clean up the names
-sex_raw_tbl |> 
-  pivot_wider(id_cols = geography_code,
-              names_from = c("c_sex_name", "measures_name"),
-              values_from = obs_value, names_sep = "_") |> 
-  clean_names()
-
-
-age_raw_tbl |> 
-  pivot_wider(id_cols = geography_code,
-              names_from = c("c_2021_age_19_name", "measures_name"),
-              values_from = obs_value, names_sep = "_") |> 
-  clean_names() |> 
-  glimpse()
-
 # We can encapsulate this in a function
 # The function takes the raw table and the column name
 # and pivots the table
@@ -156,11 +141,21 @@ sex_long |>
   geom_histogram(bins = 30) +
   facet_wrap(~sex)
 
-
+chart_theme <- function(){
+  theme_clean() +
+    theme(legend.background = element_blank(),
+          # panel.grid.major = element_line(linewidth = 1),
+          axis.text = element_text(size = 10),
+          axis.title = element_text(size = 12),
+          legend.text = element_text(size = 12),
+          plot.title = element_text(size = 14),
+          plot.subtitle = element_markdown(lineheight = 1.1),
+          plot.background = element_rect(linewidth = NULL)) 
+}
 # Make an age pyramid by sex
 # 
 
-pyramid_plot_tbl |> 
+pyramid_plot <- pyramid_plot_tbl |> 
   ggplot(mapping = aes(
     x = ifelse(c_sex_name == "Male",
                -obs_value, obs_value),
@@ -171,6 +166,55 @@ pyramid_plot_tbl |>
   labs(x = "Population",
        y = "Age band",
        fill = "Sex",
-       title = "Age pyramids for Unitary Authorities") +
+       title = "Age pyramids for Unitary Authorities",
+       caption = glue("Derived from NOMIS dataset RM121 \ ({sex_by_age_id}): 2021 census data.")) +
   facet_wrap(~geography_name) +
-  theme_minimal()
+  theme_minimal() +
+  chart_theme()
+
+pyramid_plot
+
+ggsave("plots/pyramid_plot_la.png",
+       pyramid_plot, 
+       width = 10, 
+       height = 8, 
+       units = "in",
+       bg = "white")
+
+make_mid_int <- function(range_chr){
+  
+  if(str_detect(range_chr, "-")){
+   
+  out <- range_chr |> 
+    str_split("-") |> 
+    pluck(1) |> 
+    as.numeric() |> 
+    mean() |> 
+    round()
+  } else {
+    out <- str_sub(range_chr, 1, 2) |> 
+      as.numeric() |> 
+      sum(2)
+  }
+return(out)
+}
+
+age_sex_ods_lep_tbl <- pyramid_plot_tbl |> 
+  mutate(mid_range_int = map_int(five_year_bands,
+                                 ~make_mid_int(.x)),
+         order_fct = NULL,
+         geography_name = str_remove(geography_name, ", City of")) |>
+  rename("age_band" = five_year_bands,
+         "population" = obs_value,
+         "local_authority" = geography_name,
+         "sex" = c_sex_name) 
+
+
+age_sex_ods_lep_tbl |> 
+  write_csv("data/age_sex_ods_lep.csv", na = "")
+
+age_lsoa_tbl |> 
+  mutate(total_percent = NULL) |> 
+  rename("lsoa_code" = geography_code) |>
+  write_csv("data/age_lsoa.csv", na = "")
+  
