@@ -1,0 +1,147 @@
+---
+kind: context_header
+llm_instructions: This is an LLM-optimized API specification for the R package 'nomisr'. Use this context to write correct code using nomisr functions. Each 'function' record describes a public function with its signature, arguments, and purpose. The 'package' record contains metadata. All listed functions are part of the public API.
+---
+kind: package
+schema_version: '1.1'
+name: nomisr
+version: 0.4.7
+language: R
+description: Access 'Nomis' UK Labour Market Data
+---
+kind: function
+name: nomis_content_type
+exported: true
+signature: nomis_content_type(content_type, id = NULL)
+arguments:
+  content_type: A string with the content type to return metadata on.
+  id: A string with an optional content_type id.
+returns: A tibble with metadata on a given content type.
+examples:
+- code: a <- nomis_content_type("sources")
+- code: tibble::glimpse(a)
+- code: b <- nomis_content_type("sources", id = "census")
+---
+kind: function
+name: nomis_overview
+exported: true
+signature: nomis_overview(id, select = NULL)
+arguments:
+  id: The ID of the particular dataset. Returns no data if not specified.
+  select: A string or character vector of one or more overview parts to select, excluding all others. select is not case sensitive. The options for select are described below, and are taken from the Nomis API help page.
+returns: A tibble with two columns, one a character vector with the name of the metadata category, and the other a list column of values for each category.
+examples:
+- code: library(dplyr)
+- code: q <- nomis_overview("NM_1650_1")
+- code: q \%>\%
+---
+kind: function
+name: nomis_get_data
+exported: true
+signature: nomis_get_data(id, time = NULL, date = NULL, geography = NULL,sex = NULL, measures = NULL,additional_queries = NULL, exclude_missing = FALSE,select = NULL, tidy = FALSE,tidy_style = "snake_case", query_id = NULL, ...)
+arguments:
+  '...': 'Use to pass any other parameters to the API. Useful for passing concepts that are not available through the default parameters. Only accepts concepts identified in \link[=nomis_get_metadata]{nomis_get_metadata()} and concept values identified in \link[=nomis_codelist]{nomis_codelist()}. Parameters can be quoted or unquoted. Each parameter should have a name and a value. For example, CAUSE_OF_DEATH = 10300 when querying dataset "NM_161_1". Parameters are not case sensitive. Note that R using partial matching for function variables, and so passing a parameter with the same opening characters as one of the above-named parameters can cause an error unless the value of the named parameter is specified, including as NULL. See example below:'
+  additional_queries: Any other additional queries to pass to the API. See https://www.nomisweb.co.uk/api/v01/helpfor instructions on query structure. Defaults to NULL. Deprecated in package versions greater than 0.2.0 and will eventually be removed in a future version.
+  date: Parameter for selecting specific dates. Accepts one or more date values. If given multiple values, only data for the given dates will be returned, but there is no limit to the number of data values. For example, date=c("latest, latestMINUS3, latestMINUS6") will return the latest data, data from three months prior to the latest data and six months prior to the latest data. There are two styles of values that can be used to query time. The first is one or more of "latest" (returns the latest available data), "previous" (the date prior to "latest"), "prevyear" (the date one year prior to "latest") or "first" (the oldest available data for the dataset). The second style is to use or a specific date or multiple dates, in the style of the time variable codelist, which can be found using the \link[=nomis_get_metadata]{nomis_get_metadata()} function. Values for the time and date parameters should not be used at the same time. If they are, the function will retrieve data based on the the date parameter. Defaults to NULL.
+  exclude_missing: If TRUE, excludes all missing values. Defaults to FALSE.
+  geography: The code of the geographic area to return data for. If NULL, returns data for all available geographic areas, subject to other parameters. Defaults to NULL. In the rare instance that a geographic variable does not exist, if not NULL, the function will return an error.
+  id: A string containing the ID of the dataset to retrieve, in "nm_***_*" format. The id parameter is not case sensitive.
+  measures: The code for the statistical measure(s) to include in the data. Accepts a single string or number, or a list of strings or numbers. If NULL, returns data for all available statistical measures subject to other parameters. Defaults to NULL.
+  query_id: Results can be labelled as belonging to a certain query made to the API. query_id accepts any value as a string, and will be included in every row of the tibble returned by nomis_get_data in a column labelled "QUERY_ID" in the default SCREAMING_SNAKE_CASE used by the API. Defaults to NULL.
+  select: A character vector of one or more variables to include in the returned data, excluding all others. select is not case sensitive.
+  sex: The code for sexes/genders to include in the dataset. Accepts a string or number, or a vector of strings or numbers. nomisr automatically voids any queries for sex if it is not an available code in the requested dataset. Defaults to NULL and returns all available sex/gender data. There are two different codings used for sex, depending on the dataset. For datasets using "SEX", 7 will return results for males and females, 6 only females and 5 only males. Defaults to NULL, equivalent to c(5,6,7) for datasets where sex is an option. For datasets using "C_SEX", 0 will return results for males and females, 1 only males and 2 only females. Some datasets use "GENDER" with the same values as "SEX", which works with both sex = <code> and gender = <code> as a dot parameter.
+  tidy: Logical parameter. If TRUE, converts variable names to snake_case, or another style as specified by the tidy_style parameter. Defaults to FALSE. The default variable name style from the API is SCREAMING_SNAKE_CASE.
+  tidy_style: The style to convert variable names to, if tidy = TRUE. Accepts one of "snake_case", "camelCase" and "period.case", or any of the case options accepted by \link[snakecase:to_any_case]{snakecase::to_any_case()}. Defaults to "snake_case".
+  time: Parameter for selecting dates and date ranges. Accepts either a single date value, or two date values and returns all data between the two date values, There are two styles of values that can be used to query time. The first is one or two of "latest" (returns the latest available data), "previous" (the date prior to "latest"), "prevyear" (the date one year prior to "latest") or "first" (the oldest available data for the dataset). The second style is to use or a specific date or multiple dates, in the style of the time variable codelist, which can be found using the \link[=nomis_get_metadata]{nomis_get_metadata()} function. Values for the time and date parameters should not be used at the same time. If they are, the function will retrieve data based on the the date parameter. Defaults to NULL.
+returns: A tibble containing the selected dataset. By default, all tibble columns except for the "OBS_VALUE" column are parsed as characters.
+examples:
+- code: |-
+    jobseekers_country <- nomis_get_data(
+    id = "NM_1_1", time = "latest",
+    geography = "TYPE499",
+    measures = c(20100, 20201), sex = 5
+    )
+- code: |-
+    jobseekers_wigan <- nomis_get_data(
+    id = "NM_1_1", time = "latest",
+    geography = "1879048226",
+    measures = c(20100, 20201), sex = "5"
+    )
+- code: |-
+    emp_by_occupation <- nomis_get_data(
+    id = "NM_168_1", time = "latest",
+    geography = "2013265925", sex = "0",
+    select = c(
+    "geography_code",
+    "C_OCCPUK11H_0_NAME", "obs_vAlUE"
+    )
+    )
+---
+kind: function
+name: nomis_get_metadata
+exported: true
+signature: nomis_get_metadata(id, concept = NULL, type = NULL, search = NULL,additional_queries = NULL, ..., tidy = FALSE)
+arguments:
+  '...': Use to pass any other parameters to the API.
+  additional_queries: Any other additional queries to pass to the API. See https://www.nomisweb.co.uk/api/v01/helpfor instructions on query structure. Defaults to NULL. Deprecated in package versions greater than 0.2.0 and will eventually be removed.
+  concept: A string with the variable concept to return options for. If left empty, returns all the variables for the dataset specified by id. Codes are not case sensitive. Defaults to NULL.
+  id: The ID of the particular dataset. Returns no data if not specified.
+  search: A string or character vector of strings to search for in the metadata. Defaults to NULL. As in \link[=nomis_search]{nomis_search()}, the wildcard character * can be added to the beginning and/or end of each search string.
+  tidy: If TRUE, converts tibble names to snakecase.
+  type: A string with options for a particular code value, to return types of variables available for a given code. Defaults to NULL. If concept == NULL, type will be ignored.
+returns: A tibble with metadata options for queries using \link[=nomis_get_data]{nomis_get_data()}.
+examples:
+- code: a <- nomis_get_metadata("NM_1_1")
+- code: print(a)
+- code: b <- nomis_get_metadata("NM_1_1", "geography")
+---
+kind: function
+name: nomis_data_info
+exported: true
+signature: nomis_data_info(id, tidy = FALSE)
+arguments:
+  id: Dataset ID. If empty, returns data on all available datasets. If the ID of a dataset, returns metadata for that particular dataset.
+  tidy: If TRUE, converts tibble names to snakecase.
+returns: A tibble with all available datasets and their metadata.
+examples:
+- code: x <- nomis_data_info()
+- code: tibble::glimpse(x)
+- code: y <- nomis_data_info("NM_1658_1")
+---
+kind: function
+name: nomis_api_key
+exported: true
+signature: nomis_api_key(check_env = FALSE)
+arguments:
+  check_env: If TRUE, will check the environment variable NOMIS_API_KEY first before asking for user input.
+---
+kind: function
+name: nomis_codelist
+exported: true
+signature: nomis_codelist(id, concept, search = NULL)
+arguments:
+  concept: A string with the variable concept to return options for. If left empty, returns all the variables for the dataset specified by id. Codes are not case sensitive and must be specified.
+  id: A string with the ID of the particular dataset. Must be specified.
+  search: Search for codes that contain a given string. The wildcard character * can be added to the beginning and/or end of each search string. Search strings are not case sensitive. Defaults to NULL. Note that the search function is not very powerful for some datasets.
+returns: A tibble with the codes used to query specific concepts.
+examples:
+- code: x <- nomis_codelist("NM_1_1", "item")
+- code: y <- nomis_codelist("NM_1_1", "geography", search = "*london")
+- code: z <- nomis_codelist("NM_161_1", "cause_of_death")
+---
+kind: function
+name: nomis_search
+exported: true
+signature: nomis_search(name = NULL, description = NULL,keywords = NULL, content_type = NULL, units = NULL,tidy = FALSE)
+arguments:
+  content_type: A string or character vector of strings to search for in available dataset content types. content_type can include an optional ID for that content type. Defaults to NULL.
+  description: A string or character vector of strings to search for in available dataset descriptions. Note that description looks for complete matches, so wildcards should be used at the start and end of each string. Defaults to NULL.
+  keywords: A string or character vector of strings to search for in available dataset keywords. Defaults to NULL.
+  name: A string or character vector of strings to search for in available dataset names. Defaults to NULL.
+  tidy: If TRUE, converts tibble names to snakecase.
+  units: A string or character vector of strings to search for in available dataset units. Defaults to NULL.
+returns: A tibble with details on all datasets matching the search query.
+examples:
+- code: x <- nomis_search(name = "*seekers*")
+- code: y <- nomis_search(keywords = "Claimants")
+- code: a <- nomis_search(content_type = "sources")

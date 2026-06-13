@@ -1,0 +1,268 @@
+---
+kind: context_header
+llm_instructions: This is an LLM-optimized API specification for the R package 'nomisdata'. Use this context to write correct code using nomisdata functions. Each 'function' record describes a public function with its signature, arguments, and purpose. The 'package' record contains metadata. All listed functions are part of the public API.
+---
+kind: package
+schema_version: '1.1'
+name: nomisdata
+version: 0.1.2
+language: R
+description: Access 'Nomis' UK Labour Market Data and Statistics
+---
+kind: function
+name: tidy_names
+exported: true
+signature: tidy_names(df, style = "snake_case")
+arguments:
+  df: Data frame
+  style: 'Naming style: "snake_case", "camelCase", "period.case"'
+returns: Data frame with tidied names
+examples:
+- code: df <- data.frame(GEOGRAPHY_NAME = "UK", OBS_VALUE = 100)
+- code: tidy_names(df)
+---
+kind: function
+name: enable_cache
+exported: true
+signature: enable_cache(path = NULL)
+arguments:
+  path: Cache directory path. If NULL, uses an appropriate default location.
+returns: Path to cache directory (invisibly)
+examples:
+- code: enable_cache(tempfile("nomis_cache"))
+---
+kind: function
+name: clear_cache
+exported: true
+signature: clear_cache()
+returns: Invisible TRUE. Called for side effects. Invisible TRUE. Called for side effects (clearing cache files).
+examples:
+- code: enable_cache()
+- code: clear_cache()
+- code: enable_cache(tempfile("nomis_cache"))
+---
+kind: function
+name: fetch_spatial
+exported: true
+signature: fetch_spatial(id, time = NULL, date = NULL, geography = NULL,select = NULL, exclude_missing = FALSE,..., parse_sf = TRUE)
+arguments:
+  '...': Additional query parameters (measures, sex, etc.)
+  date: Specific date selection (alternative to time)
+  exclude_missing: Remove missing values if TRUE
+  geography: Geography code(s) to filter
+  id: Dataset ID
+  parse_sf: If TRUE and sf is available, parse to sf object
+  select: Column names to include
+  time: Time period selection (same as fetch_nomis)
+returns: KML data as text or sf object (if parse_sf = TRUE)
+examples:
+- code: |-
+    spatial_data <- fetch_spatial(
+    "NM_1_1",
+    time = "latest",
+    geography = "TYPE480",
+    measures = 20100,
+    sex = 7
+    )
+---
+kind: function
+name: add_geography_names
+exported: true
+signature: add_geography_names(data, dataset_id = "NM_1_1")
+arguments:
+  data: Data frame with GEOGRAPHY_CODE column
+  dataset_id: Dataset to get geography names from
+returns: Data frame with GEOGRAPHY_NAME added
+examples:
+- code: data <- fetch_nomis("NM_1_1", time = "latest", geography = "TYPE499")
+- code: data_with_names <- add_geography_names(data)
+---
+kind: function
+name: lookup_geography
+exported: true
+signature: lookup_geography(search_term, dataset_id = "NM_1_1", type = NULL)
+arguments:
+  dataset_id: 'Dataset to search in (default: "NM_1_1")'
+  search_term: Name or partial name to search (e.g., "London", "Manchester")
+  type: Optional geography TYPE code to filter results
+returns: Tibble of matching geographies with codes and names
+examples:
+- code: lookup_geography("London")
+- code: lookup_geography("Manchester")
+- code: 'lookup_geography("Birmingham", type = "TYPE464")  # Local authorities only'
+---
+kind: function
+name: aggregate_geography
+exported: true
+signature: aggregate_geography(data, to_type, value_col = "OBS_VALUE", fun = sum)
+arguments:
+  data: Data frame with geography codes
+  fun: 'Aggregation function (default: sum)'
+  to_type: Target geography TYPE code
+  value_col: 'Column containing values to aggregate (default: "OBS_VALUE")'
+returns: A tibble with aggregated data grouped by specified variables.
+examples:
+- code: data(jsa_sample)
+- code: aggregated <- aggregate_geography(jsa_sample, "TYPE499", "OBS_VALUE")
+- code: head(aggregated)
+---
+kind: function
+name: aggregate_time
+exported: true
+signature: aggregate_time(data, period = c("year", "quarter", "month"), value_col = "OBS_VALUE", fun = mean)
+arguments:
+  data: Data frame with DATE column
+  fun: 'Aggregation function (default: mean)'
+  period: 'Aggregation period: "year", "quarter", "month"'
+  value_col: Column containing values to aggregate
+returns: A tibble with PERIOD column and aggregated values.
+examples:
+- code: data(jsa_sample)
+- code: |-
+    if ("DATE" \%in\% names(jsa_sample)) {
+    yearly_data <- aggregate_time(jsa_sample, "year", "OBS_VALUE")
+---
+kind: function
+name: get_codes
+exported: true
+signature: get_codes(id, concept = NULL, type = NULL, search = NULL, ...)
+arguments:
+  '...': Additional query parameters
+  concept: Concept name (e.g., "geography", "sex"). If NULL, returns all concepts.
+  id: Dataset ID (required)
+  search: Search term (supports wildcards)
+  type: Optional type filter
+returns: Tibble with codes and descriptions
+examples:
+- code: get_codes("NM_1_1")
+- code: get_codes("NM_1_1", "geography")
+- code: get_codes("NM_1_1", "geography", "TYPE499")
+---
+kind: function
+name: fetch_codelist
+exported: true
+signature: fetch_codelist(id, concept, search = NULL)
+arguments:
+  concept: Concept name
+  id: Dataset ID
+  search: Search term
+returns: Tibble of codes
+examples:
+- code: fetch_codelist("NM_1_1", "geography")
+- code: fetch_codelist("NM_1_1", "geography", "*manchester*")
+---
+kind: function
+name: set_api_key
+exported: true
+signature: set_api_key(key = NULL, persist = FALSE)
+arguments:
+  key: API key string. If NULL, will prompt or check environment.
+  persist: If TRUE, saves to .Renviron for future sessions.
+returns: Invisible TRUE if successful
+examples:
+- code: set_api_key("your-key-here")
+- code: set_api_key("your-key-here", persist = TRUE)
+---
+kind: function
+name: search_datasets
+exported: true
+signature: search_datasets(name = NULL, keywords = NULL, description = NULL,content_type = NULL, units = NULL)
+arguments:
+  content_type: Character vector of content types
+  description: Character vector of description search terms
+  keywords: Character vector of keyword search terms
+  name: Character vector of name search terms (supports wildcards *)
+  units: Character vector of units
+returns: Tibble of matching datasets
+examples:
+- code: search_datasets(name = "*employment*")
+- code: search_datasets(keywords = "census")
+- code: search_datasets(name = "*benefit*", keywords = "claimants")
+---
+kind: function
+name: describe_dataset
+exported: true
+signature: describe_dataset(id = NULL)
+arguments:
+  id: Dataset ID (e.g., "NM_1_1"). If NULL, returns all datasets.
+returns: Tibble with dataset metadata
+examples:
+- code: describe_dataset("NM_1_1")
+- code: all_datasets <- describe_dataset()
+---
+kind: function
+name: dataset_overview
+exported: true
+signature: dataset_overview(id, select = NULL)
+arguments:
+  id: Dataset ID (required)
+  select: Character vector of sections to return
+returns: Tibble with overview information
+examples:
+- code: dataset_overview("NM_1_1")
+- code: dataset_overview("NM_1_1", select = c("Keywords", "Units"))
+---
+kind: function
+name: clear_cache
+exported: true
+signature: clear_cache()
+returns: Invisible TRUE. Called for side effects. Invisible TRUE. Called for side effects (clearing cache files).
+examples:
+- code: enable_cache()
+- code: clear_cache()
+- code: enable_cache(tempfile("nomis_cache"))
+---
+kind: function
+name: fetch_nomis
+exported: true
+signature: fetch_nomis(id,time = NULL,date = NULL,geography = NULL,sex = NULL,measures = NULL,exclude_missing = FALSE,select = NULL,...,.progress = interactive())
+arguments:
+  '...': Additional dimension filters
+  .progress: Show progress bar for multi-part queries
+  date: Specific dates (alternative to time)
+  exclude_missing: Remove missing values
+  geography: Geography code(s)
+  id: Dataset ID (required)
+  measures: Measure code(s)
+  select: Column names to include
+  sex: Sex/gender code(s)
+  time: Time range using keywords or specific dates
+returns: Tibble with requested data
+examples:
+- code: |-
+    fetch_nomis(
+    "NM_1_1",
+    time = "latest",
+    geography = "TYPE499",
+    measures = 20100,
+    sex = 7
+    )
+- code: |-
+    fetch_nomis(
+    "NM_1_1",
+    date = c("latest", "prevyear"),
+    geography = c("2092957697", "2092957698"),
+    measures = 20100
+    )
+---
+kind: function
+name: browse_dataset
+exported: true
+signature: browse_dataset(id, page = c("dataset", "download", "metadata"))
+arguments:
+  id: Dataset ID (e.g., "NM_1_1")
+  page: 'Which page to open: "dataset", "download", "metadata"'
+returns: Invisible TRUE if successful. Called for side effects (opening browser).
+examples:
+- code: browse_dataset("NM_1_1")
+- code: browse_dataset("NM_1_1", page = "download")
+---
+kind: function
+name: explore_dataset
+exported: true
+signature: explore_dataset(id)
+arguments:
+  id: Dataset ID
+returns: Selected codes as a list, or NULL if not interactive.
+examples:
+- code: explore_dataset("NM_1_1")
