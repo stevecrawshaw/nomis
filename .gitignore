@@ -39,6 +39,9 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
+# MCP server config - holds the NOMIS API key
+.mcp.json
+
 # pkgdown site
 docs/
 
