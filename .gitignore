@@ -52,3 +52,7 @@ po/*~
 rsconnect/
 data/
 plots/
+
+# nomis-extract lives in the nomis-mcp repo; installed here as a local symlink
+# by nomis-mcp/scripts/install-skill.sh
+.claude/skills/nomis-extract
