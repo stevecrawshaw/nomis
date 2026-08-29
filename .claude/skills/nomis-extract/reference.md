@@ -7,7 +7,7 @@ On-demand reference for [`SKILL.md`](SKILL.md). West of England areas, the `MAKE
 The numeric NOMIS geography code is global — the same value works in every dataset that carries that area.
 
 | Area | GSS | NOMIS code |
-|---|---|---|
+| --- | --- | --- |
 | Bath and North East Somerset | E06000022 | 1778384918 |
 | Bristol, City of | E06000023 | 1778384919 |
 | North Somerset | E06000024 | 1778384920 |
@@ -17,7 +17,7 @@ The numeric NOMIS geography code is global — the same value works in every dat
 
 ### What "WECA" / "West of England" / "LEP" means as a footprint
 
-Analysts almost always mean **all four unitary authorities**: North Somerset + Bristol + South Gloucestershire + Bath and North East Somerset. North Somerset joined the combined authority in 2025; the LEP already covered all four.
+Analysts almost always mean **all four unitary authorities**: North Somerset + Bristol + South Gloucestershire + Bath and North East Somerset. North Somerset has not yet (August 2026) joined the Combined Authority but analysis usually includes it as joining has been agreed; the LEP already covered all four.
 
 No single native NOMIS code reliably covers all four:
 
@@ -47,7 +47,7 @@ For a WECA total broken down by another dimension (age, sex), keep that dimensio
 Analysts want the most recent boundary set. Prefer:
 
 | Level | Type | Vintage |
-|---|---|---|
+| --- | --- | --- |
 | Unitary / district | `TYPE424` | April 2023 |
 | Unitary / county | `TYPE423` | April 2023 |
 | LSOA | `TYPE151` | 2021 |
