@@ -25,14 +25,18 @@
         "gross weekly pay",
         "weca total",
         "west of england data",
-        "lep total"
+        "lep total",
+        "nomisdata",
+        "fetch_nomis"
       ],
       "intentPatterns": [
+        "(reproducible|r)\\s+script\\s+.*(nomis|nomisdata|ons data|census)",
+        "(nomis|nomisdata)\\s+.*(r script|tibble|fetch_nomis)",
         "(download|extract|get|pull|fetch|query)\\s+.*(nomis|ons|census|claimant|population estimate|labour market|annual population survey)",
         "(nomis|census|claimant count|population|earnings|employment)\\s+.*(by|for|per)\\s+.*(lsoa|msoa|ward|itl|local authorit|unitary|weca|west of england)",
         "(weca|west of england|lep)\\s+.*(total|figure|statistic|breakdown|data)\\s+.*(nomis|census|population|claimant|labour|employment|earnings)"
       ]
     },
-    "description": "Identify the right NOMIS dataset and download only the required subset via the nomis MCP, with clarifying questions on topic, geography, timescale, columns and filters. Carries the West of England / WECA geography codes and the MAKE aggregate syntax."
+    "description": "Identify the right NOMIS dataset and download only the required subset via the nomis MCP, with clarifying questions on topic, geography, timescale, columns and filters. Carries the West of England / WECA geography codes and the MAKE aggregate syntax, and can emit the confirmed query as a reproducible nomisdata R script."
   }
 }

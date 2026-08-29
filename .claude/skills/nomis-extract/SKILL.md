@@ -1,13 +1,13 @@
 ---
 name: nomis-extract
-description: Extract a specific subset of ONS data from NOMIS via the nomis MCP. Use when the user wants NOMIS / nomisweb data, or ONS labour-market, census, or population figures for an area — claimant count, Annual Population Survey, census tables (TS/RM codes), population estimates, jobs, earnings — at local-authority, LSOA, MSOA, ward, or ITL level, including for the West of England, WECA, or its councils (Bath and North East Somerset, Bristol, North Somerset, South Gloucestershire).
+description: Extract a specific subset of ONS data from NOMIS via the nomis MCP. Use when the user wants NOMIS / nomisweb data, or ONS labour-market, census, or population figures for an area — claimant count, Annual Population Survey, census tables (TS/RM codes), population estimates, jobs, earnings — at local-authority, LSOA, MSOA, ward, or ITL level, including for the West of England, WECA, or its councils (Bath and North East Somerset, Bristol, North Somerset, South Gloucestershire). Also use when the user wants a reproducible R script that sources NOMIS data with the nomisdata package.
 ---
 
 # NOMIS data extraction
 
 Turn a vague data request into a confirmed spec, then download exactly that subset with the `mcp__nomis__*` tools. Work the steps in order. Build **the spec** as you go: dataset, one decision per dimension, columns, output. Call `fetch_data` or `fetch_data_to_file` only after the user has confirmed the written spec in step 5.
 
-Read [`reference.md`](reference.md) whenever the request touches geography (any area, level, "all LSOAs in X", WECA / West of England / LEP totals), the `MAKE` aggregate syntax, or a `search_datasets` error.
+Read [`r-script.md`](r-script.md) at step 7, or whenever the user asks for an R script for NOMIS data. Read [`reference.md`](reference.md) whenever the request touches geography (any area, level, "all LSOAs in X", WECA / West of England / LEP totals), the `MAKE` aggregate syntax, or a `search_datasets` error.
 
 ## 1. Scope: topic, geography, timescale
 
@@ -56,3 +56,9 @@ Output:    <inline rows | CSV file>
 - Estimate the row count: multiply the number of selected values across every dimension (geography x time x each dimension x measures). Small and wanted inline → `fetch_data`. Otherwise `fetch_data_to_file`.
 - Read `total` and `truncated` in the response. Report a truncated result as incomplete; narrow the spec or switch to `fetch_data_to_file`. Never total or rank truncated rows.
 - Report the file path, the row count against the estimate, and any per-dataset cleanup from `reference.md`.
+
+## 7. Offer a reproducible R script
+
+After a successful fetch, offer to write the same query as a standalone R script using the `nomisdata` package, so the analyst can re-run it without the MCP.
+
+If the user accepts, read [`r-script.md`](r-script.md) and follow it: translate the confirmed spec into `fetch_nomis()`, write `nomis_<topic>_<area>.R` in the project root, then run it with `Rscript` and check its row count and `sum(obs_value)` against the fetch above. Report both figures.
