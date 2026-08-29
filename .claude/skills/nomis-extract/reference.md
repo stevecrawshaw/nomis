@@ -74,9 +74,11 @@ This avoids resolving hundreds of child codes by hand. Do not `search_codes` a g
 
 `latest`, `latestMINUS12`, `previous`, `prevyear`, `first`, or a date: `2024`, `2026-07`.
 
-## search_datasets multi-word bug
+## search_datasets zero-match bug
 
-Multi-word queries and field-prefixed patterns (`name-*population*`) throw `'NoneType' object has no attribute 'get'`. Use one bare keyword and filter the results yourself. Census codes work as-is (`TS009`, `RM121`).
+A search matching **no dataset** throws `'NoneType' object has no attribute 'get'` instead of returning an empty list. Multi-word queries and field-prefixed patterns (`name-*population*`) hit this because they match nothing, not because the syntax is rejected — a bare keyword with no matches (`gdp`, `productivity`) throws identically.
+
+So the error means "nothing found", not "bad query". Treat it as a result: try a synonym before concluding the data is absent, then conclude it is. Use one bare keyword and filter the results yourself. Census codes work as-is (`TS009`, `RM121`).
 
 ## Efficient call sequence
 
@@ -90,6 +92,9 @@ Multi-word queries and field-prefixed patterns (`name-*population*`) throw `'Non
 
 ## Known dataset quirks
 
+- **No GDP or productivity dataset exists in NOMIS.** Both keywords throw the zero-match error above. The closest holdings are GVA (`NM_2400_1`) and the components to derive GVA per job from BRES (`NM_189_1`). ONS publishes regional GDP and GVA per hour through its regional accounts, outside NOMIS. Note ITL3 splits the West of England awkwardly (see above), so ONS's published sub-regional productivity does not align to the four-authority footprint.
+- **NM_2400_1** (small area GVA, experimental, pounds million): annual 1998-2023. Despite the "small area" name it offers `TYPE424`, so no LSOA aggregation is needed for LA figures. `cell` 0 is the only value; `measures` 20100. Current prices, so deflate before reading a rise as real growth.
+- **NM_189_1** (BRES, open access): annual 2015-2024, so it overlaps NM_2400_1 only for 2015-2023. `industry` 37748736 is Total; `employment_status` 1 Employees, 4 Employment (adds working proprietors, the better denominator for GVA per job); `measure` 1 Count; `measures` 20100. LA-level counts are rounded to the nearest 1,000.
 - **NM_2014_1** (small-area population by single year of age): `c_age` code `0` is "All Ages", not age 0. It returns a duplicated "All Ages" row per area/sex — `SELECT DISTINCT` when loading. `gender`: 0 Total, 1 Male, 2 Female. `measures`: 20100 is the count.
 - **NM_1_1** (claimant / JSA): `sex` 7 is total; `item` 1 is the headline count; `measures` 20100 is persons.
 - **NM_162_1** (Claimant count by sex and age): the modern UC+JSA measure, monthly series populated back to January 1986. `gender` 0/1/2 = Total/Male/Female; `age` 0 = "All categories: Age 16+", with nested bands (2/3/4 headline, 10-20 five-year). `measure` 1 = count, 2 = proportion of residents 16-64 (returned only on the age-16+ rows — blank on any age-split row); `measures` 20100. Counts are rounded to the nearest 5, so a MAKE aggregate can differ from a manual sum by a few units.
