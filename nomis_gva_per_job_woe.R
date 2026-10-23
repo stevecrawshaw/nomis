@@ -17,7 +17,7 @@
 library(nomisdata)
 library(dplyr)
 library(readr)
-
+library(ggplot2)
 # nomisdata reads NOMIS_API_KEY; the nomis MCP uses NOMIS_UID. Same key.
 # Without one, NOMIS silently caps every result at 25,000 rows.
 key <- Sys.getenv("NOMIS_API_KEY", unset = Sys.getenv("NOMIS_UID"))
@@ -79,9 +79,19 @@ gva_per_job_tbl <- gva_tbl |>
 stopifnot(nrow(gva_per_job_tbl) > 0)
 glimpse(gva_per_job_tbl)
 
-gva_per_job_tbl |>
+p <- gva_per_job_tbl |>
   filter(geography_name == "WECA") |>
   select(year, gva_gbp_m, jobs, gva_per_job) |>
-  print(n = Inf)
+  ggplot(aes(x = year, y = gva_per_job)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "GVA per Job in WECA",
+    x = "Year",
+    y = "GVA per Job (£)"
+  ) +
+  theme_minimal()
+
+print(p)
 
 # write_csv(gva_per_job_tbl, "data/woe_gva_per_job.csv", na = "")
